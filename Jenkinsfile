@@ -1,17 +1,37 @@
 pipeline {
-    agent any                // Runs the pipeline on any available Jenkins agent (machine or node)
+    agent any
 
-    stages {                 // Defines different stages (phases) in the pipeline workflow
-        stage('Compile') {   // Stage 1: Compilation
-            steps {          // Each stage has "steps" that define what to do
-                bat 'mvn compile'   // Runs the Maven "compile" command in Windows (bat = batch)
+    stages {
+        stage('Compile') {
+            steps {
+                bat 'mvn compile'
             }
         }
 
-        stage('Unit Test') {  // Stage 2: Unit Testing
+        stage('Unit Test') {
             steps {
-                bat 'mvn test'     // Runs the Maven "test" command to execute unit tests
+                bat 'mvn test'
             }
+        }
+
+        stage('Code Quality') {
+            steps {
+                // Run JaCoCo report generation
+                bat 'mvn jacoco:report'
+            }
+            post {
+                success {
+                    // Archive JaCoCo HTML report so you can view it in Jenkins
+                    archiveArtifacts artifacts: 'target/site/jacoco/**', fingerprint: true
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Always publish test results (if using JUnit)
+            junit '**/target/surefire-reports/*.xml'
         }
     }
 }
